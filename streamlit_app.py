@@ -57,9 +57,9 @@ if os.path.exists("tokenizer.pickle"):
     # Load the tokenizer
     with open("tokenizer.pickle", "rb") as handle:
         tokenizer = pickle.load(handle)
-    print("Tokenizer loaded successfully")
+    st.write("Tokenizer loaded successfully")
 else:
-    print("Tokenizer file not found. Make sure tokenizer.pickle exists.")
+    st.error("Tokenizer file not found. Make sure tokenizer.pickle exists.")
 
 # Streamlit app
 def main():
