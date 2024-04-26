@@ -41,19 +41,25 @@
 
 # if __name__ == "__main__":
 #     main()
-
 import streamlit as st
 import pandas as pd
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+import os
+import pickle
 
 # Load the model
 model = load_model("model.h5")
 
-# Load the tokenizer
-with open("tokenizer.pickle", "rb") as handle:
-    tokenizer = pickle.load(handle)
+# Check if the tokenizer file exists
+if os.path.exists("tokenizer.pickle"):
+    # Load the tokenizer
+    with open("tokenizer.pickle", "rb") as handle:
+        tokenizer = pickle.load(handle)
+    print("Tokenizer loaded successfully")
+else:
+    print("Tokenizer file not found. Make sure tokenizer.pickle exists.")
 
 # Streamlit app
 def main():
@@ -87,3 +93,4 @@ def predict_hate_speech(text):
 
 if __name__ == "__main__":
     main()
+
