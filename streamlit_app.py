@@ -82,8 +82,13 @@ def main():
 # Function to preprocess text and perform hate speech detection
 def predict_hate_speech(text):
     # Preprocess the input text
+    text = preprocess_text(text)  # Add your preprocessing function here if needed
     sequence = tokenizer.texts_to_sequences([text])
     padded_sequence = pad_sequences(sequence, maxlen=100, padding='post')
+
+    # Debug statements to print the generated sequence
+    st.write("Generated sequence:", sequence)
+    st.write("Padded sequence:", padded_sequence)
 
     # Perform hate speech detection
     prediction = model.predict(padded_sequence)
