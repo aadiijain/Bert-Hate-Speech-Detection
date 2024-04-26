@@ -51,6 +51,17 @@ model = BertForSequenceClassification.from_pretrained("model.h5")
 tokenizer = BertTokenizer.from_pretrained("tokenizer.pickle")
 
 # Streamlit app
+import streamlit as st
+import pandas as pd
+from transformers import BertTokenizer, BertForSequenceClassification
+import torch
+
+# Load the BERT model and tokenizer
+model_path = "model.h5"  # Update the path if needed
+model = BertForSequenceClassification.from_pretrained(model_path)
+tokenizer = BertTokenizer.from_pretrained(model_path)
+
+# Streamlit app
 def main():
     st.title("Hate Speech Detection")
 
@@ -62,9 +73,7 @@ def main():
         # Perform hate speech detection
         prediction = predict_hate_speech(text_input)
         if prediction == 0:
-            st.write("Predicted Class: Neither")
-        elif prediction == 1:
-            st.write("Predicted Class: Offensive")
+            st.write("Predicted Class: Not Hate Speech")
         else:
             st.write("Predicted Class: Hate Speech")
 
