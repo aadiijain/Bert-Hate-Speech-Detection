@@ -49,8 +49,14 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 import os
 import pickle
 
-# Load the model
-model = load_model("model.h5")
+# Check if the model file exists
+model_file = "model.h5"
+if os.path.exists(model_file):
+    # Load the model
+    model = load_model(model_file)
+    st.write("Model loaded successfully")
+else:
+    st.error("Model file not found. Make sure model.h5 exists.")
 
 # Check if the tokenizer file exists
 if os.path.exists("tokenizer.pickle"):
@@ -98,5 +104,6 @@ def predict_hate_speech(text):
 
 if __name__ == "__main__":
     main()
+
 
 
