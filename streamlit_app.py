@@ -43,38 +43,12 @@
 #     main()
 import streamlit as st
 import pandas as pd
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-import os
-import pickle
-import re
+from transformers import BertTokenizer, BertForSequenceClassification
+import torch
 
-# Check if the model file exists
-model_file = "model.h5"
-if os.path.exists(model_file):
-    # Load the model
-    model = load_model(model_file)
-    st.write("Model loaded successfully")
-else:
-    st.error("Model file not found. Make sure model.h5 exists.")
-
-# Check if the tokenizer file exists
-if os.path.exists("tokenizer.pickle"):
-    # Load the tokenizer
-    with open("tokenizer.pickle", "rb") as handle:
-        tokenizer = pickle.load(handle)
-    st.write("Tokenizer loaded successfully")
-else:
-    st.error("Tokenizer file not found. Make sure tokenizer.pickle exists.")
-
-# Preprocess text function
-def preprocess_text(text):
-    # Lowercase the text
-    text = text.lower()
-    # Remove non-alphanumeric characters
-    text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
-    return text
+# Load the BERT model and tokenizer
+model = BertForSequenceClassification.from_pretrained("model.h5")
+tokenizer = BertTokenizer.from_pretrained("tokenizer.pickle")
 
 # Streamlit app
 def main():
@@ -88,25 +62,25 @@ def main():
         # Perform hate speech detection
         prediction = predict_hate_speech(text_input)
         if prediction == 0:
-            st.write("Predicted Class: Hate Speech")
-        elif prediction == 1:
-            st.write("Predicted Class: Offensive Language")
-        else:
             st.write("Predicted Class: Neither")
+        elif prediction == 1:
+            st.write("Predicted Class: Offensive")
+        else:
+            st.write("Predicted Class: Hate Speech")
 
 # Function to preprocess text and perform hate speech detection
 def predict_hate_speech(text):
     # Preprocess the input text
-    text = preprocess_text(text)
-    sequence = tokenizer.texts_to_sequences([text])
-    padded_sequence = pad_sequences(sequence, maxlen=100, padding='post')
-
+    inputs = tokenizer(text, return_tensors="pt", max_length=512, truncation=True, padding=True)
+    
     # Perform hate speech detection
-    prediction = model.predict(padded_sequence)
-
-    # Convert prediction to class label
-    return prediction.argmax()
+    with torch.no_grad():
+        outputs = model(**inputs)
+        predictions = torch.argmax(outputs.logits, dim=1)
+    
+    return predictions.item()
 
 if __name__ == "__main__":
     main()
+
 
