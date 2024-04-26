@@ -48,6 +48,7 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 import os
 import pickle
+import re
 
 # Check if the model file exists
 model_file = "model.h5"
@@ -66,6 +67,14 @@ if os.path.exists("tokenizer.pickle"):
     st.write("Tokenizer loaded successfully")
 else:
     st.error("Tokenizer file not found. Make sure tokenizer.pickle exists.")
+
+# Preprocess text function
+def preprocess_text(text):
+    # Lowercase the text
+    text = text.lower()
+    # Remove non-alphanumeric characters
+    text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
+    return text
 
 # Streamlit app
 def main():
@@ -88,13 +97,9 @@ def main():
 # Function to preprocess text and perform hate speech detection
 def predict_hate_speech(text):
     # Preprocess the input text
-    text = preprocess_text(text)  # Add your preprocessing function here if needed
+    text = preprocess_text(text)
     sequence = tokenizer.texts_to_sequences([text])
     padded_sequence = pad_sequences(sequence, maxlen=100, padding='post')
-
-    # Debug statements to print the generated sequence
-    st.write("Generated sequence:", sequence)
-    st.write("Padded sequence:", padded_sequence)
 
     # Perform hate speech detection
     prediction = model.predict(padded_sequence)
@@ -104,6 +109,4 @@ def predict_hate_speech(text):
 
 if __name__ == "__main__":
     main()
-
-
 
