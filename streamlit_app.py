@@ -58,7 +58,7 @@ model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_l
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 # Define label mapping
-label_mapping = {0: "Non-hate/offensive", 1: "Hate speech", 2: "Offensive language"}
+label_mapping = {0: "Not", 1: "Hate speech", 2: "Offensive language"}
 
 # Function to preprocess the input text
 def preprocess_text(text):
