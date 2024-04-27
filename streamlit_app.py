@@ -42,20 +42,21 @@
 # if __name__ == "__main__":
 #     main()
 # --------------------------------------------------------------------------------------------------------------------------------------------------------
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 import torch
 from transformers import BertTokenizer, BertForSequenceClassification
 from torch.utils.data import TensorDataset, DataLoader, SequentialSampler
-import re
 import time
 import datetime
 
 # Load the pretrained BERT model and tokenizer
 model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=3)
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+# Define label mapping
+label_mapping = {0: "Non-hate/offensive", 1: "Hate speech", 2: "Offensive language"}
 
 # Function to preprocess the input text
 def preprocess_text(text):
@@ -84,33 +85,31 @@ def format_time(elapsed):
     elapsed_rounded = int(round((elapsed)))
     return str(datetime.timedelta(seconds=elapsed_rounded))
 
-# Function to perform inference on the input text
-def evaluate_text(model, text):
+# Function to perform inference on the input sentence
+def predict_sentence(model, sentence):
     model.eval()
-    inputs = tokenizer(text, return_tensors='pt', max_length=64, truncation=True, padding=True)
+    # Preprocess the text
+    preprocessed_sentence = preprocess_text(sentence)
+    # Tokenize and encode the text
+    MAX_LEN = 64
+    input_ids, attention_masks = bert_encode([preprocessed_sentence], MAX_LEN)
+    # Convert to PyTorch datatypes
+    input_ids = torch.tensor(input_ids)
+    attention_masks = torch.tensor(attention_masks)
+    # Perform inference
     with torch.no_grad():
-        outputs = model(**inputs)
-    logits = outputs.logits.detach().cpu().numpy()
-    predicted_class = np.argmax(logits)
-    return predicted_class
+        outputs = model(input_ids, token_type_ids=None, attention_mask=attention_masks)
+    logits = outputs[0]
+    predicted_class = np.argmax(logits.numpy(), axis=1)[0]
+    return label_mapping[predicted_class]
 
 # Streamlit app
 st.title("Hate Speech Detection with BERT")
 
-# User input for text
-text_input = st.text_input("Enter a sentence to check for hate speech:")
-
-if text_input:
-    # Preprocess the text
-    preprocessed_text = preprocess_text(text_input)
-
-    # Perform inference
-    predicted_class = evaluate_text(model, preprocessed_text)
-
-    # Display prediction
-    label_mapping = {0: "Non-hate speech", 1: "Hate speech"}
-    prediction_label = label_mapping[predicted_class]
-    st.write("Prediction:", prediction_label)
+sentence = st.text_input("Enter a sentence to check for hate speech:")
+if sentence:
+    prediction_label = predict_sentence(model, sentence)
+    st.write(f"Predicted Label: {prediction_label}")
 
 
 
