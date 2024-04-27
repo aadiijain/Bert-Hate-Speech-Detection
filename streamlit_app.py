@@ -49,6 +49,7 @@ import numpy as np
 import torch
 from transformers import BertTokenizer, BertForSequenceClassification
 from torch.utils.data import TensorDataset, DataLoader, SequentialSampler
+import re
 import time
 import datetime
 
@@ -83,61 +84,34 @@ def format_time(elapsed):
     elapsed_rounded = int(round((elapsed)))
     return str(datetime.timedelta(seconds=elapsed_rounded))
 
-# Function to perform inference on the test set
-def evaluate(model, dataloader):
+# Function to perform inference on the input text
+def evaluate_text(model, text):
     model.eval()
-    predictions, true_labels = [], []
-    t0 = time.time()
-    for batch in dataloader:
-        batch = tuple(t.to(device) for t in batch)
-        b_input_ids, b_input_mask, b_labels = batch
-        with torch.no_grad():
-            outputs = model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask)
-        logits = outputs[0]
-        logits = logits.detach().cpu().numpy()
-        label_ids = b_labels.to('cpu').numpy()
-        predictions.append(logits)
-        true_labels.append(label_ids)
-    elapsed = format_time(time.time() - t0)
-    return predictions, true_labels, elapsed
+    inputs = tokenizer(text, return_tensors='pt', max_length=64, truncation=True, padding=True)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    logits = outputs.logits.detach().cpu().numpy()
+    predicted_class = np.argmax(logits)
+    return predicted_class
 
 # Streamlit app
 st.title("Hate Speech Detection with BERT")
 
-uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
+# User input for text
+text_input = st.text_input("Enter a sentence to check for hate speech:")
 
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
-    st.write(df)
-
+if text_input:
     # Preprocess the text
-    df['tweet'] = df['tweet'].apply(preprocess_text)
-
-    # Tokenize and encode the text
-    MAX_LEN = 64
-    input_ids, attention_masks = bert_encode(df['tweet'].values, MAX_LEN)
-
-    # Convert to PyTorch datatypes
-    input_ids = torch.tensor(input_ids)
-    attention_masks = torch.tensor(attention_masks)
-    labels = torch.tensor(df['class'].values)
-
-    # Create DataLoader
-    batch_size = 32
-    prediction_data = TensorDataset(input_ids, attention_masks, labels)
-    prediction_sampler = SequentialSampler(prediction_data)
-    prediction_dataloader = DataLoader(prediction_data, sampler=prediction_sampler, batch_size=batch_size)
+    preprocessed_text = preprocess_text(text_input)
 
     # Perform inference
-    predictions, true_labels, elapsed_time = evaluate(model, prediction_dataloader)
-    st.write(f"Inference time: {elapsed_time}")
+    predicted_class = evaluate_text(model, preprocessed_text)
 
-    # Calculate accuracy
-    flat_predictions = np.concatenate(predictions, axis=0)
-    flat_predictions = np.argmax(flat_predictions, axis=1).flatten()
-    flat_true_labels = np.concatenate(true_labels, axis=0)
-    accuracy = np.sum(flat_predictions == flat_true_labels) / len(flat_true_labels)
-    st.write(f"Accuracy: {accuracy}")
+    # Display prediction
+    label_mapping = {0: "Non-hate speech", 1: "Hate speech"}
+    prediction_label = label_mapping[predicted_class]
+    st.write("Prediction:", prediction_label)
+
 
 
 
